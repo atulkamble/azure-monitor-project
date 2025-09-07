@@ -1,6 +1,6 @@
 # Azure Monitor Project (end‑to‑end)
 
-A production‑ready, **copy‑pasteable** project to stand up Azure Monitor with:
+A production‑ready, project to stand up Azure Monitor with:
 
 * Log Analytics Workspace (LAW)
 * Data Collection Endpoint (DCE) + Data Collection Rules (DCR) for Azure Monitor Agent (AMA)
