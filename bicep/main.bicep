@@ -1,8 +1,8 @@
 targetScope = 'subscription'
 
-param resourceGroupName string = 'monitor-rg'
+param resourceGroupName string = 'monitor'
 param location string = 'eastus'
-param workspaceName string = 'atul-law'
+param workspaceName string = 'mylaw'
 param vmName string = 'monitor-vm'
 param adminUsername string = 'azureuser'
 param sshPublicKey string

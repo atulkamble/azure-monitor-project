@@ -6,9 +6,9 @@
 set -e
 
 # Variables
-RG="monitor-rg"
+RG="monitor"
 LOCATION="eastus"
-LAW="atul-law"
+LAW="mylaw"
 VM="monitor-vm"
 ADMIN_USER="azureuser"
 

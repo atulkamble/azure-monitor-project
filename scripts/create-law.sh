@@ -1,6 +1,6 @@
 #!/bin/bash
-RG="monitor-rg"
-LAW="atul-law"
+RG="monitor"
+LAW="mylaw"
 LOCATION="eastus"
 
 az monitor log-analytics workspace create \

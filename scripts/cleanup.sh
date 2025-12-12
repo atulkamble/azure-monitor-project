@@ -5,7 +5,7 @@
 
 set -e
 
-RG="monitor-rg"
+RG="monitor"
 
 echo "🧹 Starting Azure Monitor Project Cleanup..."
 

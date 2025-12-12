@@ -1,7 +1,7 @@
 #!/bin/bash
-RG="monitor-rg"
+RG="monitor"
 VM="monitor-vm"
-LAW="atul-law"
+LAW="mylaw"
 
 WID=$(az monitor log-analytics workspace show \
   --resource-group $RG \
