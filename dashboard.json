@@ -1,0 +1,274 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {
+          "0": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "rowSpan": 4,
+              "colSpan": 6
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "settings": {
+                    "content": "## Azure Monitor Dashboard\n\nThis dashboard provides comprehensive monitoring for Azure Virtual Machine:\n\n- **CPU Usage**: Real-time CPU percentage monitoring\n- **Memory Usage**: Available memory tracking\n- **Disk Performance**: Disk I/O and free space metrics\n- **Network Traffic**: Incoming and outgoing network data\n\n### Quick Actions\n- View VM Insights for detailed performance analysis\n- Check alert rules and notification settings\n- Access Log Analytics for custom queries",
+                    "title": "Azure Monitor Overview",
+                    "subtitle": ""
+                  }
+                }
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "x": 6,
+              "y": 0,
+              "rowSpan": 4,
+              "colSpan": 6
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/{subscription-id}/resourceGroups/monitor-rg/providers/Microsoft.Compute/virtualMachines/monitor-vm"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "1c38a923-b8f9-4f29-ba18-61b4313bd5ac",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "Perf\n| where ObjectName == \"Processor\" and CounterName == \"% Processor Time\"\n| where InstanceName == \"_Total\"\n| summarize AggregatedValue = avg(CounterValue) by bin(TimeGenerated, 5m)\n| render timechart",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+            }
+          },
+          "2": {
+            "position": {
+              "x": 0,
+              "y": 4,
+              "rowSpan": 4,
+              "colSpan": 6
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/{subscription-id}/resourceGroups/monitor-rg/providers/Microsoft.Compute/virtualMachines/monitor-vm"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "2c38a923-b8f9-4f29-ba18-61b4313bd5ac",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "Perf\n| where ObjectName == \"Memory\" and CounterName == \"Available MBytes\"\n| summarize AggregatedValue = avg(CounterValue) by bin(TimeGenerated, 5m)\n| render timechart",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+            }
+          },
+          "3": {
+            "position": {
+              "x": 6,
+              "y": 4,
+              "rowSpan": 4,
+              "colSpan": 6
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/{subscription-id}/resourceGroups/monitor-rg/providers/Microsoft.Compute/virtualMachines/monitor-vm"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "3c38a923-b8f9-4f29-ba18-61b4313bd5ac",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "Perf\n| where ObjectName == \"LogicalDisk\" and CounterName == \"% Free Space\"\n| where InstanceName != \"_Total\"\n| summarize AggregatedValue = avg(CounterValue) by bin(TimeGenerated, 5m), InstanceName\n| render timechart",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 24,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        },
+        "filterLocale": {
+          "value": "en-us"
+        },
+        "filters": {
+          "value": {
+            "MsPortalFx_TimeRange": {
+              "model": {
+                "format": "utc",
+                "granularity": "auto",
+                "relative": "24h"
+              },
+              "displayCache": {
+                "name": "UTC Time",
+                "value": "Past 24 hours"
+              },
+              "filteredPartIds": []
+            }
+          }
+        }
+      }
+    }
+  },
+  "name": "atul-monitor-dashboard",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Azure Monitor Dashboard"
+  }
+}
