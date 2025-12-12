@@ -1,10 +1,9 @@
 **Azure Monitor Basic Project** 
 
-✔ Architecture diagram
-✔ Step-by-step setup
-✔ CLI + PowerShell + ARM/Bicep/Terraform scripts
-✔ Log Analytics + VM Insights + Metrics + Alerts + Dashboards
-✔ Perfect for GitHub README
+- ✔ Architecture diagram
+- ✔ Step-by-step setup
+- ✔ CLI + PowerShell + ARM/Bicep/Terraform scripts
+- ✔ Log Analytics + VM Insights + Metrics + Alerts + Dashboards
 
 ---
 
