@@ -40,6 +40,32 @@ flowchart TD
 | **Custom Dashboard** | Visual performance overview | Real-time charts and KPI widgets |
 
 ---
+```
+git clone https://github.com/atulkamble/azure-monitor-project.git
+cd /azure-monitor-project
+
+terraform init 
+terraform plan 
+terraform apply -auto-approve 
+
+sudo apt update -y 
+sudo apt install stress 
+sudo stress --cpu 8 --timeout 5
+sudo stress --cpu 4 --timeout 1
+sudo stress --cpu 2 --timeout 6
+sudo stress --cpu 4 --timeout 1
+sudo stress --cpu 2 --timeout 8
+sudo stress --cpu 8 --timeout 5
+sudo stress --cpu 4 --timeout 1
+sudo stress --cpu 2 --timeout 6
+sudo stress --cpu 4 --timeout 1
+sudo stress --cpu 2 --timeout 8
+sudo stress --cpu 8 --timeout 5
+sudo stress --cpu 4 --timeout 1
+sudo stress --cpu 2 --timeout 6
+sudo stress --cpu 4 --timeout 1
+sudo stress --cpu 2 --timeout 8
+```
 
 ## 📁 **Project Structure**
 
