@@ -1,7 +1,7 @@
 variable "resource_group_name" {
   description = "The name of the resource group"
   type        = string
-  default     = "monitor-rg"
+  default     = "monitor"
 }
 
 variable "location" {
@@ -13,7 +13,7 @@ variable "location" {
 variable "workspace_name" {
   description = "The name of the Log Analytics workspace"
   type        = string
-  default     = "atul-law"
+  default     = "mylaw"
 }
 
 variable "vm_name" {
@@ -23,9 +23,9 @@ variable "vm_name" {
 }
 
 variable "vm_size" {
-  description = "The size of the virtual machine"
+  description = "The size of the virtual machine (Standard_B2s recommended for monitoring workloads)"
   type        = string
-  default     = "Standard_B1s"
+  default     = "Standard_B2s"
 }
 
 variable "admin_username" {
@@ -37,11 +37,17 @@ variable "admin_username" {
 variable "alert_email" {
   description = "Email address for alert notifications"
   type        = string
-  default     = "admin@example.com"
+  default     = "atul_kamble@hotmail.com"
 }
 
 variable "cpu_threshold" {
-  description = "CPU threshold for alerts"
+  description = "CPU threshold for alerts (percentage)"
   type        = number
   default     = 80
+}
+
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key file"
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
 }

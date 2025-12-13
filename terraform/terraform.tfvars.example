@@ -1,0 +1,19 @@
+# Terraform Variables Configuration Example
+# Copy this file to terraform.tfvars and customize the values
+
+# Resource Configuration
+resource_group_name = "monitor"
+location           = "eastus"
+workspace_name     = "mylaw"
+
+# VM Configuration  
+vm_name         = "monitor-vm"
+vm_size         = "Standard_B2s"  # Good for monitoring workloads
+admin_username  = "azureuser"
+
+# Alert Configuration
+alert_email     = "your-email@domain.com"  # CHANGE THIS
+cpu_threshold   = 80
+
+# SSH Configuration
+ssh_public_key_path = "~/.ssh/id_rsa.pub"  # Path to your SSH public key

@@ -1,17 +1,29 @@
+# Configure the Azure Provider
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~>4.0"
+    }
+  }
+  required_version = ">= 1.0"
+}
+
 provider "azurerm" {
   features {}
 }
 
 resource "azurerm_resource_group" "rg" {
-  name     = "monitor-rg"
-  location = "eastus"
+  name     = var.resource_group_name
+  location = var.location
 }
 
 resource "azurerm_log_analytics_workspace" "law" {
-  name                = "atul-law"
+  name                = var.workspace_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   sku                 = "PerGB2018"
+  retention_in_days   = 30
 }
 
 # Virtual Network and Subnet
@@ -78,11 +90,11 @@ resource "azurerm_network_interface_security_group_association" "nsg_association
 
 # Linux Virtual Machine
 resource "azurerm_linux_virtual_machine" "vm" {
-  name                = "monitor-vm"
-  size                = "Standard_B1s"
+  name                = var.vm_name
+  size                = var.vm_size
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  admin_username      = "azureuser"
+  admin_username      = var.admin_username
 
   disable_password_authentication = true
 
@@ -91,33 +103,45 @@ resource "azurerm_linux_virtual_machine" "vm" {
   ]
 
   admin_ssh_key {
-    username   = "azureuser"
-    public_key = file("~/.ssh/id_rsa.pub")
+    username   = var.admin_username
+    public_key = file(var.ssh_public_key_path)
   }
 
   os_disk {
     caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
+    storage_account_type = "Standard_LRS"
   }
 
   source_image_reference {
     publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts-gen2"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
     version   = "latest"
   }
 }
 
-# Azure Monitor Agent Extension
-resource "azurerm_virtual_machine_extension" "monitor_agent" {
-  name                 = "AzureMonitorLinuxAgent"
+# OMS Agent Extension for Log Analytics
+resource "azurerm_virtual_machine_extension" "oms_agent" {
+  name                 = "OmsAgentForLinux"
   virtual_machine_id   = azurerm_linux_virtual_machine.vm.id
-  publisher            = "Microsoft.Azure.Monitor"
-  type                 = "AzureMonitorLinuxAgent"
-  type_handler_version = "1.0"
+  publisher            = "Microsoft.EnterpriseCloud.Monitoring"
+  type                 = "OmsAgentForLinux"
+  type_handler_version = "1.19"
+  auto_upgrade_minor_version = true
+
+  settings = jsonencode({
+    workspaceId = azurerm_log_analytics_workspace.law.workspace_id
+  })
+
+  protected_settings = jsonencode({
+    workspaceKey = azurerm_log_analytics_workspace.law.primary_shared_key
+  })
+
+  depends_on = [azurerm_log_analytics_workspace.law]
 }
 
-# Data Collection Rule
+# Data Collection Rule (Optional - for Azure Monitor Agent)
+# Note: OMS Agent doesn't require DCR, but keeping for future AMA migration
 resource "azurerm_monitor_data_collection_rule" "dcr" {
   name                = "monitor-dcr"
   resource_group_name = azurerm_resource_group.rg.name
@@ -140,6 +164,7 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
       facility_names = ["*"]
       log_levels     = ["*"]
       name           = "test-datasource-syslog"
+      streams        = ["Microsoft-Syslog"]
     }
 
     performance_counter {
@@ -151,12 +176,12 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
   }
 }
 
-# Data Collection Rule Association
-resource "azurerm_monitor_data_collection_rule_association" "dcr_association" {
-  name                    = "monitor-dcr-association"
-  target_resource_id      = azurerm_linux_virtual_machine.vm.id
-  data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr.id
-}
+# Data Collection Rule Association (commented out since using OMS Agent)
+# resource "azurerm_monitor_data_collection_rule_association" "dcr_association" {
+#   name                    = "monitor-dcr-association"
+#   target_resource_id      = azurerm_linux_virtual_machine.vm.id
+#   data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr.id
+# }
 
 # Metric Alert
 resource "azurerm_monitor_metric_alert" "cpu_alert" {
@@ -187,7 +212,7 @@ resource "azurerm_monitor_action_group" "main" {
   short_name          = "monitor-ag"
 
   email_receiver {
-    name          = "sendtoadmin"
-    email_address = "admin@example.com"
+    name          = "admin"
+    email_address = var.alert_email
   }
 }
