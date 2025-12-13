@@ -72,7 +72,7 @@ azure-monitor-project/
 ### ⚡ **Option 1: One-Click Deployment**
 ```bash
 # Clone and deploy everything in one command
-git clone <repository-url>
+git clone https://github.com/atulkamble/azure-monitor-project.git
 cd azure-monitor-project
 chmod +x scripts/deploy-all.sh
 ./scripts/deploy-all.sh
