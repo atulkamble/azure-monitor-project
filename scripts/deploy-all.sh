@@ -32,10 +32,10 @@ echo "🖥️ Deploying Virtual Machine: $VM"
 az vm create \
   --resource-group $RG \
   --name $VM \
-  --image UbuntuLTS \
+  --image Ubuntu2404 \
   --admin-username $ADMIN_USER \
   --generate-ssh-keys \
-  --size Standard_B1s
+  --size Standard_D2s_v5
 
 # Step 4: Install Azure Monitor Agent and enable VM Insights
 echo "🔍 Installing Azure Monitor Agent..."
@@ -57,7 +57,7 @@ az monitor action-group create \
   --resource-group $RG \
   --name monitor-action-group \
   --short-name monitor-ag \
-  --action email admin admin@example.com
+  --action email admin atul_kamble@hotmail.com
 
 # Step 6: Create CPU Alert
 echo "⚠️ Creating CPU Alert Rule..."
