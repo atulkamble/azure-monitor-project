@@ -35,7 +35,7 @@ az vm create \
   --image Ubuntu2404 \
   --admin-username $ADMIN_USER \
   --generate-ssh-keys \
-  --size Standard_B1s
+  --size Standard_D2s_v5
 
 # Step 4: Install Azure Monitor Agent and enable VM Insights
 echo "🔍 Installing Azure Monitor Agent..."
