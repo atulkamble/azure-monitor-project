@@ -32,7 +32,7 @@ echo "🖥️ Deploying Virtual Machine: $VM"
 az vm create \
   --resource-group $RG \
   --name $VM \
-  --image UbuntuLTS \
+  --image Ubuntu2404 \
   --admin-username $ADMIN_USER \
   --generate-ssh-keys \
   --size Standard_B1s
