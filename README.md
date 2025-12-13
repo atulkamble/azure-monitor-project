@@ -75,7 +75,12 @@ azure-monitor-project/
 git clone https://github.com/atulkamble/azure-monitor-project.git
 cd azure-monitor-project
 chmod +x scripts/deploy-all.sh
+
+# Deploy with default email
 ./scripts/deploy-all.sh
+
+# OR deploy with your custom email for alerts
+./scripts/deploy-all.sh your-email@domain.com
 ```
 
 ### 🏗️ **Option 2: Terraform Deployment**
@@ -107,7 +112,14 @@ Before deploying, ensure you have:
 - ✅ **SSH key pair** generated (`ssh-keygen -t rsa -b 2048`)
 - ✅ **Terraform** (optional, for Terraform deployment)
 - ✅ **Azure subscription** with appropriate permissions
-- ✅ **Resource quota** for VM deployment in target region
+- ✅ **VM quota** for Standard_B series VMs (requires 2 vCPUs)
+- ✅ **Contributor or Owner** role on the subscription/resource group
+
+### 🔍 **Quota Check**
+Verify your VM quota before deployment:
+```bash
+az vm list-usage --location eastus --query "[?contains(name.value, 'standardBSFamily')]" -o table
+```
 
 ---
 
@@ -115,39 +127,76 @@ Before deploying, ensure you have:
 
 After successful deployment, you'll have:
 
-| Resource Type | Resource Name | Purpose |
-|---------------|---------------|---------|
-| **Resource Group** | `monitor` | Container for all resources |
-| **Log Analytics Workspace** | `mylaw` | Centralized logging and analytics |
-| **Virtual Machine** | `monitor-vm` | Ubuntu VM for monitoring |
-| **Virtual Network** | `monitor-vnet` | Isolated network environment |
-| **Public IP** | `monitor-vm-pip` | External access to VM |
-| **Network Security Group** | `monitor-vm-nsg` | Network security rules |
-| **Metric Alerts** | `cpu-high-alert` + others | Proactive monitoring |
-| **Dashboard** | `Azure Monitor Dashboard` | Visual monitoring interface |
+| Resource Type | Resource Name | Specifications | Purpose |
+|---------------|---------------|----------------|----------|
+| **Resource Group** | `monitor` | East US | Container for all resources |
+| **Log Analytics Workspace** | `mylaw` | PerGB2018, 30-day retention | Centralized logging and analytics |
+| **Virtual Machine** | `monitor-vm` | Ubuntu 22.04 LTS, Standard_B2s | Monitoring target (2 vCPUs, 4GB RAM) |
+| **Virtual Network** | `monitor-vmVNET` | 10.0.0.0/16 | Isolated network environment |
+| **Public IP** | `monitor-vmPublicIP` | Dynamic assignment | External SSH access |
+| **Network Security Group** | `monitor-vmNSG` | SSH (22) allowed | Network security rules |
+| **OMS Agent** | `OmsAgentForLinux` | v1.19+ | Log collection and monitoring |
+| **Action Group** | `monitor-action-group` | Email notifications | Alert routing |
+| **CPU Alert** | `cpu-high-alert` | >80% for 5 min | Performance monitoring |
 
 ---
 
 ## 📊 **Monitoring Features**
 
-### 🔍 **VM Insights**
-- Real-time performance monitoring
-- Process and dependency mapping  
+### 🔍 **VM Insights** 
+- Real-time performance monitoring via OMS Agent
+- System logs and performance counters
 - Historical performance trends
-- Capacity planning insights
+- Custom metric collection
+- Process and service monitoring
 
-### ⚠️ **Metric Alerts**
-- **CPU Alert**: Triggers when CPU > 80% for 5 minutes
-- **Memory Alert**: Triggers when available memory < 15%
-- **Disk Alert**: Triggers when free disk space < 10%
-- **Network Alert**: Monitors network connectivity issues
+### ⚠️ **Configured Alerts**
+- **CPU Alert**: Triggers when CPU > 80% (5-minute window)
+- **Memory Alert**: Available memory < 15% (when supported)
+- **Email Notifications**: Sent to configured email address
+- **Alert Severity**: Level 2 (Warning)
+- **Evaluation Frequency**: Every 1 minute
 
-### 📈 **Dashboard Widgets**
-- CPU utilization charts
-- Memory usage graphs
-- Disk I/O performance
-- Network traffic visualization
-- Alert status overview
+### 📈 **Available Metrics**
+- CPU utilization percentage
+- Memory usage and availability
+- Disk I/O operations and space
+- Network bytes in/out
+- Process count and resource usage
+- System events and logs
+
+---
+
+## 🔧 **Troubleshooting**
+
+### **Common Issues and Solutions**
+
+#### **VM Quota Exceeded**
+```
+QuotaExceeded: Operation could not be completed as it results in exceeding approved standardDSv5Family Cores quota
+```
+**Solution**: The script uses `Standard_B2s` which requires BS Family quota. Check available quota:
+```bash
+az vm list-usage --location eastus --query "[?limit != '0']" -o table
+```
+
+#### **Unsupported OS Version**
+```
+Error: Unsupported operating system: ubuntu 24.04
+```
+**Solution**: Script uses Ubuntu 22.04 LTS for OMS Agent compatibility.
+
+#### **Extension Installation Failed**
+```
+VMExtensionProvisioningError: Not all required GCS parameters are provided
+```
+**Solution**: Script installs OmsAgentForLinux instead of AzureMonitorLinuxAgent for better compatibility.
+
+#### **Dashboard Creation Failed**
+```
+Failed to parse 'lenses' from property
+```
+**Solution**: Dashboard creation is optional. Create manually in Azure Portal if needed.
 
 ---
 
@@ -155,17 +204,27 @@ After successful deployment, you'll have:
 
 ### Generate Test Load
 ```bash
-# SSH into the VM
-ssh azureuser@<vm-public-ip>
+# Get VM public IP
+VM_IP=$(az vm show --resource-group monitor --name monitor-vm --show-details --query publicIps -o tsv)
+echo "VM Public IP: $VM_IP"
 
-# Generate CPU load to trigger alerts
-stress --cpu 2 --timeout 300s
+# SSH into the VM
+ssh azureuser@$VM_IP
+
+# Install stress testing tools
+sudo apt update && sudo apt install stress-ng htop -y
+
+# Generate CPU load to trigger alerts (>80% for 5+ minutes)
+stress-ng --cpu 2 --timeout 300s
+
+# Monitor system resources
+htop  # Press 'q' to quit
 
 # Check memory usage
 free -h
 
-# Monitor disk I/O
-iostat -x 1
+# Monitor disk usage
+df -h
 ```
 
 ### Verify Monitoring
