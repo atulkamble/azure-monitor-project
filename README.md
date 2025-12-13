@@ -99,8 +99,283 @@ az deployment sub create \
   --parameters sshPublicKey="$(cat ~/.ssh/id_rsa.pub)"
 ```
 
-### 📋 **Option 4: Step-by-Step Manual**
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed manual deployment steps.
+### 📋 **Option 4: Step-by-Step Manual Deployment**
+
+Complete manual deployment with detailed commands and explanations:
+
+#### 🔐 **1. Prerequisites Setup**
+```bash
+# Login to Azure
+az login
+
+# Set subscription (replace with your subscription ID)
+az account set --subscription "your-subscription-id"
+
+# Generate SSH key pair if you don't have one
+ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa
+
+# Verify Azure CLI authentication
+az account show --output table
+```
+
+#### 📦 **2. Create Resource Group**
+```bash
+# Create resource group
+az group create \
+  --name monitor \
+  --location eastus \
+  --tags project=azure-monitor environment=demo
+
+# Verify resource group creation
+az group show --name monitor --output table
+```
+
+#### 📊 **3. Create Log Analytics Workspace**
+```bash
+# Create Log Analytics Workspace
+az monitor log-analytics workspace create \
+  --resource-group monitor \
+  --workspace-name mylaw \
+  --location eastus \
+  --sku PerGB2018 \
+  --retention-time 30 \
+  --tags purpose=monitoring
+
+# Get workspace details
+az monitor log-analytics workspace show \
+  --resource-group monitor \
+  --workspace-name mylaw \
+  --output table
+
+# Get workspace ID and key (save for later)
+WORKSPACE_ID=$(az monitor log-analytics workspace show \
+  --resource-group monitor \
+  --workspace-name mylaw \
+  --query customerId -o tsv)
+
+WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
+  --resource-group monitor \
+  --workspace-name mylaw \
+  --query primarySharedKey -o tsv)
+
+echo "Workspace ID: $WORKSPACE_ID"
+echo "Workspace Key: $WORKSPACE_KEY"
+```
+
+#### 🖥️ **4. Create Virtual Machine**
+```bash
+# Create VM with Ubuntu 22.04 LTS
+az vm create \
+  --resource-group monitor \
+  --name monitor-vm \
+  --image Ubuntu2204 \
+  --admin-username azureuser \
+  --ssh-key-values ~/.ssh/id_rsa.pub \
+  --size Standard_B2s \
+  --vnet-name monitor-vmVNET \
+  --subnet default \
+  --public-ip-address monitor-vmPublicIP \
+  --nsg monitor-vmNSG \
+  --nsg-rule SSH \
+  --location eastus \
+  --tags purpose=monitoring \
+  --output table
+
+# Get VM public IP
+VM_PUBLIC_IP=$(az vm show \
+  --resource-group monitor \
+  --name monitor-vm \
+  --show-details \
+  --query publicIps -o tsv)
+
+echo "VM Public IP: $VM_PUBLIC_IP"
+echo "SSH Command: ssh azureuser@$VM_PUBLIC_IP"
+```
+
+#### 🔍 **5. Install Azure Monitor Agent**
+```bash
+# Get VM resource ID
+VM_ID=$(az vm show \
+  --resource-group monitor \
+  --name monitor-vm \
+  --query id -o tsv)
+
+# Install OMS Agent for Linux (more reliable than Azure Monitor Agent)
+az vm extension set \
+  --name OmsAgentForLinux \
+  --publisher Microsoft.EnterpriseCloud.Monitoring \
+  --resource-group monitor \
+  --vm-name monitor-vm \
+  --settings "{\"workspaceId\":\"$WORKSPACE_ID\"}" \
+  --protected-settings "{\"workspaceKey\":\"$WORKSPACE_KEY\"}"
+
+# Verify extension installation
+az vm extension show \
+  --resource-group monitor \
+  --vm-name monitor-vm \
+  --name OmsAgentForLinux \
+  --query provisioningState -o tsv
+```
+
+#### 🔔 **6. Create Action Group for Alerts**
+```bash
+# Create action group with email notification
+az monitor action-group create \
+  --resource-group monitor \
+  --name monitor-action-group \
+  --short-name monitor-ag \
+  --action email admin "your-email@domain.com"
+
+# Get action group ID
+ACTION_GROUP_ID=$(az monitor action-group show \
+  --resource-group monitor \
+  --name monitor-action-group \
+  --query id -o tsv)
+
+echo "Action Group ID: $ACTION_GROUP_ID"
+```
+
+#### ⚠️ **7. Create Metric Alert Rules**
+```bash
+# CPU High Alert (>80%)
+az monitor metrics alert create \
+  --name cpu-high-alert \
+  --resource-group monitor \
+  --scopes $VM_ID \
+  --condition "avg Percentage CPU > 80" \
+  --description "CPU exceeds 80% for 5 minutes" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 2 \
+  --action $ACTION_GROUP_ID
+
+# Memory Low Alert (<15% available) - Optional
+az monitor metrics alert create \
+  --name memory-low-alert \
+  --resource-group monitor \
+  --scopes $VM_ID \
+  --condition "avg Available Memory Percentage < 15" \
+  --description "Available memory is below 15%" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 2 \
+  --action $ACTION_GROUP_ID \
+  || echo "Memory alert skipped - metric may not be available yet"
+
+# Disk Space Alert (<10% free space) - Optional
+az monitor metrics alert create \
+  --name disk-space-alert \
+  --resource-group monitor \
+  --scopes $VM_ID \
+  --condition "avg Free Space Percentage < 10" \
+  --description "Disk free space is below 10%" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 2 \
+  --action $ACTION_GROUP_ID \
+  || echo "Disk space alert skipped - metric may not be available yet"
+
+# List all created alerts
+az monitor metrics alert list \
+  --resource-group monitor \
+  --output table
+```
+
+#### 📈 **8. Create Custom Dashboard (Optional)**
+```bash
+# Enable portal dashboard extension
+az config set extension.use_dynamic_install=yes_without_prompt
+
+# Create dashboard from JSON template (if available)
+az portal dashboard create \
+  --resource-group monitor \
+  --name monitor-dashboard \
+  --input-path dashboard.json \
+  || echo "Dashboard creation skipped - create manually in Azure Portal"
+```
+
+#### ✅ **9. Verification Steps**
+```bash
+# Check resource group contents
+echo "📊 Deployed Resources:"
+az resource list --resource-group monitor --output table
+
+# Verify Log Analytics workspace
+echo "📊 Log Analytics Workspace:"
+az monitor log-analytics workspace show \
+  --resource-group monitor \
+  --workspace-name mylaw \
+  --query "{Name:name,Location:location,Sku:sku.name,RetentionDays:retentionInDays}" \
+  --output table
+
+# Check VM status
+echo "🖥️ Virtual Machine Status:"
+az vm get-instance-view \
+  --resource-group monitor \
+  --name monitor-vm \
+  --query "{Name:name,PowerState:instanceView.statuses[1].displayStatus,Location:location}" \
+  --output table
+
+# Check VM extensions
+echo "🔍 VM Extensions:"
+az vm extension list \
+  --resource-group monitor \
+  --vm-name monitor-vm \
+  --query "[].{Name:name,Publisher:publisher,ProvisioningState:provisioningState}" \
+  --output table
+
+# Check alerts
+echo "⚠️ Alert Rules:"
+az monitor metrics alert list \
+  --resource-group monitor \
+  --query "[].{Name:name,Enabled:enabled,Severity:severity,WindowSize:windowSize}" \
+  --output table
+```
+
+#### 🧪 **10. Testing the Setup**
+```bash
+# SSH into the VM
+ssh azureuser@$VM_PUBLIC_IP
+
+# Once connected to VM, install stress testing tools
+sudo apt update && sudo apt install -y stress-ng htop
+
+# Generate CPU load to test alerts (run for 5+ minutes to trigger alert)
+stress-ng --cpu 2 --timeout 300s &
+
+# Monitor CPU usage in another terminal window
+htop
+
+# Check memory and disk usage
+free -h
+df -h
+
+# Exit VM
+exit
+```
+
+#### 📊 **11. Monitor Results**
+After 5-10 minutes, check the monitoring data:
+
+1. **Azure Portal Links:**
+   - VM Insights: https://portal.azure.com/#view/Microsoft_Azure_Monitoring/AzureMonitoringBrowseBlade/~/virtualMachines
+   - Log Analytics: https://portal.azure.com/#view/HubsExtension/BrowseResource/resourceType/Microsoft.OperationalInsights%2Fworkspaces
+   - Alerts: https://portal.azure.com/#view/Microsoft_Azure_Monitoring/AzureMonitoringBrowseBlade/~/alertsV2
+
+2. **Sample Log Analytics Queries:**
+```kusto
+// View VM performance data
+Perf
+| where Computer contains "monitor-vm"
+| where TimeGenerated > ago(1h)
+| summarize avg(CounterValue) by CounterName, bin(TimeGenerated, 5m)
+| render timechart
+
+// Check alert activity
+Alert
+| where TimeGenerated > ago(24h)
+| project TimeGenerated, AlertName, AlertSeverity, Description
+```
 
 ---
 
