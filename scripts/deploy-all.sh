@@ -57,7 +57,7 @@ az monitor action-group create \
   --resource-group $RG \
   --name monitor-action-group \
   --short-name monitor-ag \
-  --action email admin admin@example.com
+  --action email admin atul_kamble@hotmail.com
 
 # Step 6: Create CPU Alert
 echo "⚠️ Creating CPU Alert Rule..."
