@@ -5,11 +5,16 @@
 ## ✨ **Features**
 - ✅ Complete infrastructure deployment (VM, VNet, Log Analytics)
 - ✅ Azure Monitor Agent with VM Insights
-- ✅ CPU, Memory, Disk, and Network metrics alerts
+- ✅ **Enhanced Metric Alerts** with validated configurations ⭐ **NEW**
+- ✅ **Alert Validation Scripts** with error handling ⭐ **NEW**
+- ✅ CPU, Memory, Disk, Network, and VM Availability alerts
 - ✅ Custom Azure Dashboard with performance widgets
 - ✅ Multiple deployment methods (CLI, Terraform, Bicep)
 - ✅ One-click deployment script
+- ✅ **Comprehensive validation and troubleshooting tools** ⭐ **NEW**
 - ✅ Cleanup and maintenance scripts
+- ✅ **Auto-mitigation enabled alerts** ⭐ **NEW**
+- ✅ **Production-ready configurations** with best practices
 
 ---
 
@@ -36,7 +41,7 @@ flowchart TD
 | **Log Analytics Workspace** | Centralized log storage and analysis | System logs, performance counters, events |
 | **Azure Monitor Agent** | Data collection from VM | CPU, Memory, Disk, Network, Process data |
 | **VM Insights** | Comprehensive VM monitoring | Performance maps, dependency tracking |
-| **Metric Alerts** | Proactive monitoring notifications | CPU >80%, Memory >85%, Disk space <10% |
+| **Enhanced Metric Alerts** | Validated proactive monitoring | CPU >80%, Memory <1.5GB, Disk <10%, Network traffic, VM availability |
 | **Custom Dashboard** | Visual performance overview | Real-time charts and KPI widgets |
 
 ---
@@ -71,14 +76,17 @@ sudo stress --cpu 2 --timeout 8
 
 ```
 azure-monitor-project/
-├── 📜 README.md                    # This documentation
+├── 📜 README.md                    # This comprehensive documentation
 ├── 📋 DEPLOYMENT.md                # Quick deployment guide
 ├── 📊 dashboard.json               # Azure Dashboard template
+├── 📋 ALERT_VALIDATION_REPORT.md   # Alert validation analysis ⭐ NEW
 ├── 📂 scripts/                     # Deployment and management scripts
 │   ├── 🚀 deploy-all.sh           # One-click complete deployment
 │   ├── 📊 create-law.sh           # Log Analytics Workspace setup
 │   ├── 🔍 enable-vminsights.sh    # VM Insights configuration
-│   ├── ⚠️ create-alert.sh         # Metric alerts setup
+│   ├── ⚠️ create-alert.sh         # Enhanced metric alerts setup (UPDATED)
+│   ├── ✅ validate-alerts.sh       # Alert validation & troubleshooting ⭐ NEW
+│   ├── 🧪 check-cleanup.sh        # Pre-cleanup verification
 │   └── 🧹 cleanup.sh              # Resource cleanup
 ├── 📂 terraform/                   # Infrastructure as Code (Terraform)
 │   ├── main.tf                    # Main Terraform configuration
@@ -90,6 +98,49 @@ azure-monitor-project/
     ├── vminsights.bicep           # VM monitoring setup
     └── alerts.bicep               # Alert rules configuration
 ```
+
+---
+
+## 🚨 **Enhanced Alert System** ⭐ **NEW**
+
+### 🔍 **Alert Validation & Improvements**
+This project now includes **validated and enhanced alert configurations** with comprehensive error handling:
+
+#### **✅ Validated Alert Types:**
+
+| Alert | Metric Name | Threshold | Availability | Status |
+|-------|-------------|-----------|-------------|--------|
+| **CPU Usage** | `Percentage CPU` | `> 80%` | ✅ Always available | **VALIDATED** |
+| **Memory Low** | `Available Memory Bytes` | `< 1.5GB` | ⚠️ Requires AMA* | **FIXED** |
+| **Disk Space** | `Disk Free Space %` | `< 10%` | ⚠️ Requires AMA* | **FIXED** |
+| **Network Traffic** | `Network In Total` | `> 100MB/5min` | ✅ Always available | **NEW** |
+| **VM Availability** | `VmAvailabilityMetric` | `< 1` | ✅ Always available | **NEW** |
+
+*AMA = Azure Monitor Agent with guest OS metrics
+
+#### **🛠️ Key Improvements:**
+- ✅ **Correct metric names** (fixed from original commands)
+- ✅ **Auto-mitigation enabled** (alerts resolve automatically)
+- ✅ **Resource validation** before alert creation
+- ✅ **Graceful error handling** with descriptive messages
+- ✅ **Variable security** (proper quoting and validation)
+- ✅ **Enhanced documentation** and troubleshooting
+
+#### **📋 Alert Validation Script:**
+```bash
+# Validate current alert configuration
+./scripts/validate-alerts.sh
+
+# Validate specific resource group and VM
+./scripts/validate-alerts.sh my-rg my-vm
+```
+
+**The validation script provides:**
+- Resource existence verification
+- Available metrics analysis
+- Azure Monitor Agent status check
+- Current alert configuration review
+- Best practice recommendations
 
 ---
 
@@ -263,37 +314,44 @@ echo "Action Group ID: $ACTION_GROUP_ID"
 
 #### ⚠️ **7. Create Metric Alert Rules**
 ```bash
-# CPU High Alert (>80%)
+# Use the enhanced alert creation script (RECOMMENDED)
+./scripts/create-alert.sh
+
+# OR create alerts manually with validated commands:
+
+# CPU High Alert (>80%) - ✅ VALIDATED
 az monitor metrics alert create \
   --name cpu-high-alert \
   --resource-group monitor \
-  --scopes $VM_ID \
-  --condition "avg Percentage CPU > 80" \
+  --scopes "$VM_ID" \
+  --condition "avg 'Percentage CPU' > 80" \
   --description "CPU exceeds 80% for 5 minutes" \
   --window-size 5m \
   --evaluation-frequency 1m \
   --severity 2 \
-  --action $ACTION_GROUP_ID
+  --action "$ACTION_GROUP_ID" \
+  --auto-mitigate true
 
-# Memory Low Alert (<15% available) - Optional
+# Memory Low Alert (<1.5GB available) - 🔧 CORRECTED
 az monitor metrics alert create \
   --name memory-low-alert \
   --resource-group monitor \
-  --scopes $VM_ID \
-  --condition "avg Available Memory Percentage < 15" \
-  --description "Available memory is below 15%" \
+  --scopes "$VM_ID" \
+  --condition "avg 'Available Memory Bytes' < 1610612736" \
+  --description "Available memory is below 1.5GB" \
   --window-size 5m \
   --evaluation-frequency 1m \
   --severity 2 \
-  --action $ACTION_GROUP_ID \
-  || echo "Memory alert skipped - metric may not be available yet"
+  --action "$ACTION_GROUP_ID" \
+  --auto-mitigate true \
+  || echo "⚠️ Memory alert requires Azure Monitor Agent with guest OS metrics"
 
-# Disk Space Alert (<10% free space) - Optional
+# Disk Space Alert (<10% free space) - 🔧 CORRECTED
 az monitor metrics alert create \
   --name disk-space-alert \
   --resource-group monitor \
-  --scopes $VM_ID \
-  --condition "avg Free Space Percentage < 10" \
+  --scopes "$VM_ID" \
+  --condition "avg 'Disk Free Space %' < 10" \
   --description "Disk free space is below 10%" \
   --window-size 5m \
   --evaluation-frequency 1m \
@@ -534,6 +592,32 @@ df -h
 3. **Monitor** → **Alerts** → Check alert rules
 4. **Dashboards** → View custom dashboard
 
+### 🔍 **Alert Validation & Troubleshooting** ⭐ **NEW**
+
+#### **Validate Alert Configuration:**
+```bash
+# Run comprehensive alert validation
+./scripts/validate-alerts.sh
+
+# Check specific resource group and VM
+./scripts/validate-alerts.sh monitor monitor-vm
+```
+
+#### **Common Alert Issues & Solutions:**
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| **Memory/Disk alerts failing** | Missing Azure Monitor Agent | Install AMA with guest OS metrics |
+| **No alert notifications** | Action Group misconfigured | Verify email address in Action Group |
+| **Alerts not triggering** | Insufficient test duration | Run stress tests for 5+ minutes |
+| **Metric not available** | VM not running long enough | Wait 10-15 minutes after VM creation |
+
+#### **Enhanced Alert Features:**
+- ✅ **Auto-mitigation**: Alerts automatically resolve when conditions clear
+- ✅ **Proper error handling**: Graceful failures with descriptive messages
+- ✅ **Resource validation**: Checks VM and Action Group existence
+- ✅ **Best practices**: Correct metric names and thresholds
+
 ---
 
 ## 🛠️ **Infrastructure as Code**
@@ -659,17 +743,57 @@ az vm extension set \
 | **Alerts not firing** | Threshold misconfiguration | Check alert rule criteria |
 | **SSH connection failed** | NSG rules or key issues | Verify security group and SSH keys |
 
-### 🔧 **Debug Commands**
+### 🔧 **Enhanced Debug Commands**
 ```bash
+# Comprehensive alert validation (RECOMMENDED)
+./scripts/validate-alerts.sh monitor monitor-vm
+
 # Check VM extension status
 az vm extension list --resource-group monitor --vm-name monitor-vm
 
 # Verify Log Analytics connection
 az monitor log-analytics workspace show --resource-group monitor --workspace-name mylaw
 
-# List active alerts
-az monitor metrics alert list --resource-group monitor
+# List active alerts with details
+az monitor metrics alert list --resource-group monitor --output table
+
+# Check available metrics for VM
+VMID=$(az vm show -g monitor -n monitor-vm --query id -o tsv)
+az monitor metrics list-definitions --resource "$VMID" --output table
+
+# Test alert condition manually
+az monitor metrics list \
+  --resource "$VMID" \
+  --metric "Percentage CPU" \
+  --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ) \
+  --end-time $(date -u +%Y-%m-%dT%H:%M:%SZ) \
+  --interval PT1M \
+  --aggregation Average
+
+# Check Action Group configuration
+az monitor action-group show --resource-group monitor --name monitor-action-group
 ```
+
+### 📋 **Alert Validation Report** ⭐ **NEW**
+
+A comprehensive analysis of alert command validation and improvements is available in:
+**[ALERT_VALIDATION_REPORT.md](ALERT_VALIDATION_REPORT.md)**
+
+**The report includes:**
+- ✅ **Validation results** for each alert type
+- ❌ **Issues identified** in original commands  
+- 🔧 **Corrections applied** with explanations
+- 📊 **Correct metric names** and availability
+- 🚀 **Enhanced features** added
+- 📝 **Best practices** implemented
+
+**Key Fixes Applied:**
+- Fixed incorrect metric names (`Available Memory Percentage` → `Available Memory Bytes`)
+- Added proper variable quoting for security
+- Implemented auto-mitigation for faster alert resolution
+- Enhanced error handling with descriptive messages
+- Added resource existence validation
+- Included additional network and availability alerts
 
 ---
 
@@ -725,4 +849,33 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## 🎯 **What's New in This Version** ⭐
+
+### **Enhanced Alert System:**
+- ✅ **Validated metric names** and corrected alert configurations
+- ✅ **Auto-mitigation enabled** for all alerts
+- ✅ **Comprehensive error handling** with graceful failures
+- ✅ **Resource validation** before alert creation
+- ✅ **Security improvements** with proper variable quoting
+
+### **New Scripts & Tools:**
+- ✅ **[validate-alerts.sh](scripts/validate-alerts.sh)** - Comprehensive alert validation
+- ✅ **[ALERT_VALIDATION_REPORT.md](ALERT_VALIDATION_REPORT.md)** - Detailed analysis report
+- ✅ **Enhanced [create-alert.sh](scripts/create-alert.sh)** - Production-ready alert creation
+
+### **Additional Monitoring:**
+- ✅ **Network traffic monitoring** - High inbound traffic detection
+- ✅ **VM availability alerts** - Monitor VM uptime and availability
+- ✅ **Enhanced troubleshooting** - Better debugging and validation tools
+
+### **Documentation Improvements:**
+- ✅ **Comprehensive README** with step-by-step instructions
+- ✅ **Troubleshooting guides** with common issues and solutions
+- ✅ **Best practices** implementation throughout
+- ✅ **Validation procedures** for reliable deployments
+
+---
+
 > **💡 Tip**: Star this repository if you find it helpful and share it with others who are learning Azure monitoring!
+
+> **🔧 For Support**: Check the [ALERT_VALIDATION_REPORT.md](ALERT_VALIDATION_REPORT.md) for detailed troubleshooting and validation information.
