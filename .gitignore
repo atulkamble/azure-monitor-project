@@ -2,30 +2,88 @@
 **/.terraform/*
 *.tfstate
 *.tfstate.*
+*.tfstate.backup
+.terraform.lock.hcl
 crash.log
 crash.*.log
 *.tfvars
-!*.tfvars.example
+*.tfvars.json
+!terraform.tfvars.example
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
 .terraformrc
 terraform.rc
+.terraform/
+
+# Terraform plan files
+*.tfplan
+*.tfplan.*
+
+# SSH Keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.pub
 
 # OS files
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # IDE files
 .vscode/
+*.code-workspace
 .idea/
 *.swp
 *.swo
+*.tmp
+*.temp
 *~
 
-# Logs
+# Logs and debug files
 *.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Azure CLI
+# Environment files
+.env
+.env.local
+.env.*.local
+.environment
+
+# Azure CLI and credentials
 .azure/
+azure.json
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Temporary directories
+tmp/
+temp/
+.tmp/
