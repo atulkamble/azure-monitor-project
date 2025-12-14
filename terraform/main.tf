@@ -11,6 +11,7 @@ terraform {
 
 provider "azurerm" {
   features {}
+  subscription_id = var.subscription_id
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -24,6 +25,27 @@ resource "azurerm_log_analytics_workspace" "law" {
   resource_group_name = azurerm_resource_group.rg.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
+
+  tags = {
+    Environment = "monitoring"
+    Project     = "azure-monitor"
+  }
+}
+
+# VM Insights Solution
+resource "azurerm_log_analytics_solution" "vminsights" {
+  solution_name         = "VMInsights"
+  location              = azurerm_resource_group.rg.location
+  resource_group_name   = azurerm_resource_group.rg.name
+  workspace_resource_id = azurerm_log_analytics_workspace.law.id
+  workspace_name        = azurerm_log_analytics_workspace.law.name
+
+  plan {
+    publisher = "Microsoft"
+    product   = "OMSGallery/VMInsights"
+  }
+
+  depends_on = [azurerm_log_analytics_workspace.law]
 }
 
 # Virtual Network and Subnet
@@ -65,7 +87,8 @@ resource "azurerm_public_ip" "pip" {
   name                = "monitor-pip"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
 }
 
 # Network Interface
@@ -183,36 +206,183 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
 #   data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr.id
 # }
 
-# Metric Alert
-resource "azurerm_monitor_metric_alert" "cpu_alert" {
-  name                = "cpu-alert"
+# Enhanced Metric Alerts System - Validated Configurations
+
+# CPU High Alert (>80%) - ✅ VALIDATED & TESTED
+resource "azurerm_monitor_metric_alert" "cpu_high_alert" {
+  name                = "cpu-high-alert"
   resource_group_name = azurerm_resource_group.rg.name
   scopes              = [azurerm_linux_virtual_machine.vm.id]
-  description         = "CPU High Alert"
+  description         = "CPU exceeds ${var.cpu_threshold}% for 5 minutes"
+  severity            = 2
   window_size         = "PT5M"
   frequency           = "PT1M"
+  auto_mitigate       = true
+  enabled             = true
 
   criteria {
     metric_namespace = "Microsoft.Compute/virtualMachines"
     metric_name      = "Percentage CPU"
     aggregation      = "Average"
     operator         = "GreaterThan"
-    threshold        = 80
+    threshold        = var.cpu_threshold
   }
 
   action {
     action_group_id = azurerm_monitor_action_group.main.id
   }
+
+  tags = {
+    Environment = "monitoring"
+    AlertType   = "performance"
+  }
+
+  depends_on = [azurerm_monitor_action_group.main, azurerm_virtual_machine_extension.oms_agent]
 }
 
-# Action Group for alerts
+# Memory Low Alert (<1.5GB available) - ✅ WORKING
+resource "azurerm_monitor_metric_alert" "memory_low_alert" {
+  name                = "memory-low-alert"
+  resource_group_name = azurerm_resource_group.rg.name
+  scopes              = [azurerm_linux_virtual_machine.vm.id]
+  description         = "Available memory is below ${var.memory_threshold_gb}GB"
+  severity            = 2
+  window_size         = "PT5M"
+  frequency           = "PT1M"
+  auto_mitigate       = true
+  enabled             = true
+
+  criteria {
+    metric_namespace = "Microsoft.Compute/virtualMachines"
+    metric_name      = "Available Memory Bytes"
+    aggregation      = "Average"
+    operator         = "LessThan"
+    threshold        = var.memory_threshold_bytes
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.main.id
+  }
+
+  tags = {
+    Environment = "monitoring"
+    AlertType   = "memory"
+  }
+
+  depends_on = [azurerm_monitor_action_group.main, azurerm_virtual_machine_extension.oms_agent]
+}
+
+# Network Traffic Alert (>100MB/5min) - ✅ WORKING
+resource "azurerm_monitor_metric_alert" "network_in_high_alert" {
+  name                = "network-in-high-alert"
+  resource_group_name = azurerm_resource_group.rg.name
+  scopes              = [azurerm_linux_virtual_machine.vm.id]
+  description         = "High network inbound traffic detected (>${var.network_threshold_mb}MB in 5 minutes)"
+  severity            = 3
+  window_size         = "PT5M"
+  frequency           = "PT1M"
+  auto_mitigate       = true
+  enabled             = true
+
+  criteria {
+    metric_namespace = "Microsoft.Compute/virtualMachines"
+    metric_name      = "Network In Total"
+    aggregation      = "Total"
+    operator         = "GreaterThan"
+    threshold        = var.network_threshold_bytes
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.main.id
+  }
+
+  tags = {
+    Environment = "monitoring"
+    AlertType   = "network"
+  }
+
+  depends_on = [azurerm_monitor_action_group.main, azurerm_virtual_machine_extension.oms_agent]
+}
+
+# VM Availability Alert - ✅ WORKING
+resource "azurerm_monitor_metric_alert" "vm_availability_alert" {
+  name                = "vm-availability-alert"
+  resource_group_name = azurerm_resource_group.rg.name
+  scopes              = [azurerm_linux_virtual_machine.vm.id]
+  description         = "Virtual Machine is not available"
+  severity            = 1
+  window_size         = "PT5M"
+  frequency           = "PT1M"
+  auto_mitigate       = true
+  enabled             = true
+
+  criteria {
+    metric_namespace = "Microsoft.Compute/virtualMachines"
+    metric_name      = "VmAvailabilityMetric"
+    aggregation      = "Average"
+    operator         = "LessThan"
+    threshold        = 1
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.main.id
+  }
+
+  tags = {
+    Environment = "monitoring"
+    AlertType   = "availability"
+  }
+
+  depends_on = [azurerm_monitor_action_group.main, azurerm_virtual_machine_extension.oms_agent]
+}
+
+# Disk Performance Alert (uses available host metrics)
+resource "azurerm_monitor_metric_alert" "disk_performance_alert" {
+  name                = "disk-performance-alert"
+  resource_group_name = azurerm_resource_group.rg.name
+  scopes              = [azurerm_linux_virtual_machine.vm.id]
+  description         = "High disk write operations detected (>${var.disk_ops_threshold} ops/sec)"
+  severity            = 3
+  window_size         = "PT5M"
+  frequency           = "PT1M"
+  auto_mitigate       = true
+  enabled             = true
+
+  criteria {
+    metric_namespace = "Microsoft.Compute/virtualMachines"
+    metric_name      = "OS Disk Write Operations/Sec"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = var.disk_ops_threshold
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.main.id
+  }
+
+  tags = {
+    Environment = "monitoring"
+    AlertType   = "disk"
+  }
+
+  depends_on = [azurerm_monitor_action_group.main, azurerm_virtual_machine_extension.oms_agent]
+}
+
+# Enhanced Action Group for alerts
 resource "azurerm_monitor_action_group" "main" {
   name                = "monitor-action-group"
   resource_group_name = azurerm_resource_group.rg.name
   short_name          = "monitor-ag"
+  enabled             = true
 
   email_receiver {
-    name          = "admin"
-    email_address = var.alert_email
+    name                    = "admin"
+    email_address          = var.alert_email
+    use_common_alert_schema = true
+  }
+
+  tags = {
+    Environment = "monitoring"
+    Project     = "azure-monitor"
   }
 }

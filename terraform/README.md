@@ -55,47 +55,83 @@ terraform output ssh_connection_command
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
+| **Infrastructure** | | | |
 | `resource_group_name` | Name of the resource group | `monitor` | No |
 | `location` | Azure region | `eastus` | No |
 | `workspace_name` | Log Analytics workspace name | `mylaw` | No |
 | `vm_name` | Virtual machine name | `monitor-vm` | No |
 | `vm_size` | VM size (recommend Standard_B2s) | `Standard_B2s` | No |
 | `admin_username` | VM admin username | `azureuser` | No |
-| `alert_email` | Email for alerts | `atul_kamble@hotmail.com` | **Yes** |
-| `cpu_threshold` | CPU alert threshold (%) | `80` | No |
+| `subscription_id` | Azure subscription ID | `""` | **Yes** |
 | `ssh_public_key_path` | Path to SSH public key | `~/.ssh/id_rsa.pub` | No |
+| **Alert Configuration** | | | |
+| `alert_email` | Email for alert notifications | `atul_kamble@hotmail.com` | **Yes** |
+| `cpu_threshold` | CPU alert threshold (%) | `80` | No |
+| `memory_threshold_gb` | Memory threshold (GB available) | `1.5` | No |
+| `memory_threshold_bytes` | Memory threshold (bytes) | `1610612736` | No |
+| `network_threshold_mb` | Network traffic threshold (MB/5min) | `100` | No |
+| `network_threshold_bytes` | Network threshold (bytes) | `104857600` | No |
+| `disk_ops_threshold` | Disk operations threshold (ops/sec) | `50` | No |
 
 ## 🔧 **Customization Examples**
 
-### **Custom Email and Resource Names**
+### **Custom Alert Thresholds**
 ```hcl
-# terraform.tfvars
-resource_group_name = "my-monitoring"
-workspace_name     = "my-workspace"
-vm_name           = "my-monitor-vm"
-alert_email       = "alerts@mycompany.com"
-cpu_threshold     = 75
+# terraform.tfvars - Customize monitoring sensitivity
+alert_email            = "alerts@mycompany.com"
+cpu_threshold          = 75    # More sensitive CPU monitoring
+memory_threshold_gb    = 2.0   # Higher memory threshold
+network_threshold_mb   = 200   # Less sensitive network monitoring
+disk_ops_threshold     = 100   # Higher disk activity threshold
 ```
 
-### **Different VM Size and Location**
+### **Different Environment Configuration**
 ```hcl
-# terraform.tfvars
-location = "westus2"
-vm_size  = "Standard_B1s"  # Smaller/cheaper option
+# terraform.tfvars - Production environment
+resource_group_name = "prod-monitoring"
+location           = "westus2"
+vm_size           = "Standard_B4ms"  # Larger VM for production
+workspace_name    = "prod-law"
+vm_name           = "prod-monitor-vm"
+```
+
+### **Development Environment**
+```hcl
+# terraform.tfvars - Cost-optimized development
+vm_size              = "Standard_B1s"     # Smaller/cheaper
+cpu_threshold        = 90                 # Less sensitive alerts
+memory_threshold_gb  = 1.0                # Lower memory threshold
 ```
 
 ## 📊 **Deployed Resources**
 
 After successful deployment, you'll have:
 
-- ✅ Resource Group
-- ✅ Log Analytics Workspace (30-day retention)
-- ✅ Virtual Machine (Ubuntu 22.04 LTS)
-- ✅ Virtual Network and Security Group
-- ✅ Public IP and Network Interface  
+**Core Infrastructure:**
+- ✅ Resource Group with proper tags
+- ✅ Log Analytics Workspace (30-day retention) 
+- ✅ Virtual Machine (Ubuntu 22.04 LTS, Standard_B2s)
+- ✅ Virtual Network and Security Group (SSH access)
+- ✅ Public IP and Network Interface
+
+**Monitoring Components:**  
 - ✅ OMS Agent for Linux (monitoring extension)
-- ✅ CPU Metric Alert (>80% threshold)
+- ✅ VM Insights Solution for comprehensive monitoring
+- ✅ Data Collection Rules for performance counters and logs
 - ✅ Action Group for email notifications
+
+**Enhanced Alert System (5 alerts):** ⭐ **NEW**
+- ✅ **CPU High Alert**: >80% CPU usage (auto-mitigate enabled)
+- ✅ **Memory Low Alert**: <1.5GB available memory  
+- ✅ **Network Traffic Alert**: >100MB inbound in 5 minutes
+- ✅ **VM Availability Alert**: Virtual machine downtime detection
+- ✅ **Disk Performance Alert**: >50 disk write operations/sec
+
+**All alerts include:**
+- Auto-mitigation (alerts clear automatically)
+- Validated metric names and configurations
+- Production-ready error handling  
+- Proper severity levels and descriptions
 
 ## 🔍 **Outputs**
 

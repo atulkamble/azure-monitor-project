@@ -40,10 +40,52 @@ variable "alert_email" {
   default     = "atul_kamble@hotmail.com"
 }
 
+# Alert Thresholds
 variable "cpu_threshold" {
   description = "CPU threshold for alerts (percentage)"
   type        = number
   default     = 80
+  validation {
+    condition     = var.cpu_threshold >= 0 && var.cpu_threshold <= 100
+    error_message = "CPU threshold must be between 0 and 100."
+  }
+}
+
+variable "memory_threshold_gb" {
+  description = "Memory threshold for alerts (GB available)"
+  type        = number
+  default     = 1.5
+}
+
+variable "memory_threshold_bytes" {
+  description = "Memory threshold for alerts (bytes available) - 1.5GB = 1610612736 bytes"
+  type        = number
+  default     = 1610612736
+}
+
+variable "network_threshold_mb" {
+  description = "Network traffic threshold for alerts (MB per 5-minute window)"
+  type        = number
+  default     = 100
+}
+
+variable "network_threshold_bytes" {
+  description = "Network traffic threshold for alerts (bytes per 5-minute window) - 100MB = 104857600 bytes"
+  type        = number
+  default     = 104857600
+}
+
+variable "disk_ops_threshold" {
+  description = "Disk operations threshold for alerts (operations per second)"
+  type        = number
+  default     = 50
+}
+
+# Infrastructure Configuration
+variable "subscription_id" {
+  description = "Azure subscription ID"
+  type        = string
+  default     = ""  # Can be set via environment variable AZURE_SUBSCRIPTION_ID
 }
 
 variable "ssh_public_key_path" {

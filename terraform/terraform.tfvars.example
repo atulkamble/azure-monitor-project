@@ -8,12 +8,17 @@ workspace_name     = "mylaw"
 
 # VM Configuration  
 vm_name         = "monitor-vm"
-vm_size         = "Standard_B2s"  # Good for monitoring workloads
+vm_size         = "Standard_B2s"  # Good for monitoring workloads, 2 vCPUs, 4GB RAM
 admin_username  = "azureuser"
 
 # Alert Configuration
-alert_email     = "your-email@domain.com"  # CHANGE THIS
-cpu_threshold   = 80
+alert_email     = "your-email@domain.com"  # CHANGE THIS - Your email for alert notifications
+
+# Alert Thresholds (Customize based on your needs)
+cpu_threshold          = 80     # CPU alert when usage > 80%
+memory_threshold_gb    = 1.5    # Memory alert when available < 1.5GB
+network_threshold_mb   = 100    # Network alert when traffic > 100MB in 5 minutes
+disk_ops_threshold     = 50     # Disk alert when write operations > 50/sec
 
 # SSH Configuration
 ssh_public_key_path = "~/.ssh/id_rsa.pub"  # Path to your SSH public key
